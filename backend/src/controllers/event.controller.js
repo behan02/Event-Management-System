@@ -40,9 +40,9 @@ export const getEvent = async (req, res) => {
 
 export const createEvent = async (req, res) => {
     try {
-        const { title, description, date, location } = req.body;
-        if (!title || !description || !date || !location) {
-            return res.status(400).json({ message: "Missing required fields: title, description, date, and location" });
+        const { title, description, date, location, maxParticipants } = req.body;
+        if (!title || !description || !date || !location || !maxParticipants) {
+            return res.status(400).json({ message: "Missing required fields: title, description, date, location, and maxParticipants" });
         }
 
         // Validate date format and ensure it's not in the past

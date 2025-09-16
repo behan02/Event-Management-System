@@ -35,6 +35,11 @@ const eventSchema = mongoose.Schema(
             type: Number,
             default: 0
         },
+        maxParticipants: {
+            type: Number,
+            required: true,
+            min: [1, "Maximum participants must be at least 1"]
+        },
         category: {
             type: String,
             required: true
