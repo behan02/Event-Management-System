@@ -2,14 +2,20 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
 export const protectRoute = async (req, res, next) => {
-    const token = req.cookies.token;
+    const authHeader = req.headers.authorization || req.headers.Authorization;
 
-    if(!token){
+    if(!authHeader || !authHeader.startsWith('Bearer ')){
+        return res.status(401).json({message: "Unauthorized"});
+    }
+
+    const accessToken = authHeader.split(' ')[1];
+
+    if(!accessToken){
         return res.status(401).json({message: "Unauthorized - No token provided"});
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(accessToken, process.env.ACCESS_SECRET_KEY);
 
         if(!decoded){
             return res.status(401).json({message: "Unauthorized - Invalid Token"});

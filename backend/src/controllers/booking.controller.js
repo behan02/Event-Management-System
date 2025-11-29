@@ -1,6 +1,7 @@
 import Booking from "../models/booking.model.js";
 import mongoose from "mongoose";
 import Event from "../models/event.model.js";
+import crypto from "crypto";
 
 export const getUserBookedEvents = async (req, res) => {
     const userId = req.user._id;
@@ -67,10 +68,20 @@ export const deleteBookedEvent = async (req, res) => {
     }
 }
 
+const buildPaymentMeta = (eventPrice, providedId) => {
+    const paymentId = providedId || `PAY-${crypto.randomUUID ? crypto.randomUUID() : new mongoose.Types.ObjectId().toString()}`;
+    const isFreeEvent = eventPrice === 0;
+    return {
+        paymentId,
+        isPaid: isFreeEvent,
+        paymentStatus: isFreeEvent ? "success" : "pending"
+    };
+};
+
 export const createBooking = async (req, res) => {
     try {
         const { eventId } = req.params;
-        const { quantity } = req.body;
+        const { quantity, paymentId } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(eventId)) {
             return res.status(400).json({ message: "Invalid event ID format" });
@@ -108,6 +119,7 @@ export const createBooking = async (req, res) => {
 
         // Calculate total price
         const totalPrice = quantity * event.price;
+        const paymentMeta = buildPaymentMeta(event.price, paymentId);
 
         // Use transaction to ensure both operations succeed
         const session = await mongoose.startSession();
@@ -121,6 +133,7 @@ export const createBooking = async (req, res) => {
                     userId: req.user._id,
                     quantity,
                     totalPrice,
+                    ...paymentMeta
                 });
                 await newBooking.save({ session });
 

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import { generateToken } from "../lib/utils.js";
+import jwt from "jsonwebtoken";
+import { generateAccessToken, generateRefreshToken } from "../lib/utils.js";
 
 export const signup = async (req, res) => {
     const { name, email, password } = req.body;
@@ -41,15 +42,20 @@ export const signup = async (req, res) => {
         });
 
         await newUser.save();
-        generateToken(newUser._id, res);
+
+        const refreshToken = generateRefreshToken(newUser._id);
+        const accessToken = generateAccessToken(newUser._id);
+
+        res.cookie("refreshToken", refreshToken, { 
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            httpOnly: true, 
+            secure: true,
+            sameSite: "strict"
+        });
 
         res.status(201).json({
-            user: {
-                _id: newUser._id,
-                name: newUser.name,
-                email: newUser.email,
-                role: newUser.role
-            }
+            // newUser,
+            accessToken
         });
 
     } catch (error) {
@@ -81,15 +87,19 @@ export const login = async (req, res) => {
             return res.status(400).json({message: "Invalid email or password"});
         }
 
-        generateToken(user._id, res);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        res.cookie("refreshToken", refreshToken, { 
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            httpOnly: true, 
+            secure: true,
+            sameSite: "strict"
+        });
 
         res.status(200).json({
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            // user,
+            accessToken
         });
 
     } catch(error) {
@@ -100,14 +110,47 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        res.clearCookie("token", {
+        res.clearCookie("refreshToken", {
             httpOnly: true,
-            secure: (process.env.NODE_ENV || "development") === "production",
+            secure: true,
             sameSite: "strict"
         });
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         console.error("Error in logout controller:", error.message);
         res.status(500).json({ message: "Server error during logout" });
+    }
+}
+
+export const refresh = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if(!refreshToken){
+        return res.status(401).json({message: "Unauthorized - No refresh token provided"})
+    }
+
+    try{
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+
+        if(!decoded){
+            return res.status(401).json({message: "Unauthorized - Invalid Token"});
+        }
+
+        const user = await User.findById(decoded.id).select("-password"); 
+        
+        if(!user){
+            return res.status(401).json({message: "Unauthorized - User not found"});
+        }
+
+        const newAccessToken = generateAccessToken(user._id, res);
+
+        res.status(200).json({
+            // user,
+            accessToken: newAccessToken
+        });
+
+    } catch(error) {
+        console.error("Error in refresh controller:", error.message);
+        res.status(500).json({message: "Server error during token refresh"});
     }
 }
