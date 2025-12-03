@@ -142,7 +142,7 @@ export const refresh = async (req, res) => {
             return res.status(401).json({message: "Unauthorized - User not found"});
         }
 
-        const newAccessToken = generateAccessToken(user._id, res);
+        const newAccessToken = generateAccessToken(user._id);
 
         res.status(200).json({
             // user,
@@ -152,5 +152,27 @@ export const refresh = async (req, res) => {
     } catch(error) {
         console.error("Error in refresh controller:", error.message);
         res.status(500).json({message: "Server error during token refresh"});
+    }
+}
+
+export const getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select("-password");
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                createdAt: user.createdAt
+            }
+        });
+    } catch (error) {
+        console.error("Error in getUserProfile controller:", error.message);
+        res.status(500).json({ message: "Server error while fetching profile" });
     }
 }

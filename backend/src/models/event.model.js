@@ -8,7 +8,8 @@ const eventSchema = mongoose.Schema(
         },
         description: {
             type: String,
-            required: true
+            required: false,
+            default: "No description provided"
         },
         date: {
             type: Date,
