@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import sampleEventImg from "../assets/event.jpg";
 import {
   createEvent,
@@ -57,10 +58,21 @@ const Events = () => {
     setError(null);
     try {
       const [allEvents, ownedEvents] = await Promise.all([fetchEvents(), fetchMyEvents()]);
-      setEvents(allEvents);
-      setMyEvents(ownedEvents);
+      
+      const currentDate = new Date();
+      
+      // Filter out past events but show all events including user's own
+      const futureEvents = allEvents.filter(event => new Date(event.date) >= currentDate);
+      
+      // Filter past events from user's events too
+      const futureMyEvents = ownedEvents.filter(event => new Date(event.date) >= currentDate);
+      
+      setEvents(futureEvents);
+      setMyEvents(futureMyEvents);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load events");
+      const errorMsg = err.response?.data?.message || "Failed to load events";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -98,10 +110,12 @@ const Events = () => {
     setBanner(null);
     try {
       await deleteEvent(eventId);
-      setBanner({ type: "success", message: "Event deleted successfully." });
+      toast.success("Event deleted successfully.");
       await loadEvents();
     } catch (err) {
-      setBanner({ type: "error", message: err.response?.data?.message || "Unable to delete event" });
+      const errorMsg = err.response?.data?.message || "Unable to delete event";
+      setBanner({ type: "error", message: errorMsg });
+      toast.error(errorMsg);
     } finally {
       setActionLoading(false);
     }
@@ -117,20 +131,23 @@ const Events = () => {
       price: Number(formValues.price) || 0,
       maxParticipants: Number(formValues.maxParticipants) || 1,
       date: formValues.date ? new Date(formValues.date).toISOString() : new Date().toISOString(),
+      description: formValues.description || 'No description provided',
     };
 
     try {
       if (editingId) {
         await updateEvent(editingId, payload);
-        setBanner({ type: "success", message: "Event updated successfully." });
+        toast.success("Event updated successfully.");
       } else {
         await createEvent(payload);
-        setBanner({ type: "success", message: "Event created successfully." });
+        toast.success("Event created successfully.");
       }
       closeForm();
       await loadEvents();
     } catch (err) {
-      setBanner({ type: "error", message: err.response?.data?.message || "Unable to save event" });
+      const errorMsg = err.response?.data?.message || "Unable to save event";
+      setBanner({ type: "error", message: errorMsg });
+      toast.error(errorMsg);
     } finally {
       setActionLoading(false);
     }
@@ -139,7 +156,7 @@ const Events = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
       <header className="space-y-3">
-        <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Events</p>
+        {/* <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Events</p> */}
         <h1 className="text-3xl font-bold text-slate-900">Plan, publish & discover</h1>
         <p className="text-slate-500 max-w-3xl">
           Create public or private events, manage capacity, and explore what other organizers in the Eventix community
@@ -293,15 +310,10 @@ const Events = () => {
                       {event.bookedCount || 0}/{event.maxParticipants} seats booked
                     </div>
                     <div className="flex gap-2">
-                      {myEvents.some((owned) => owned._id === event._id) && (
-                        <span className="px-3 py-1 text-xs rounded-lg bg-indigo-50 text-indigo-600 font-semibold">
-                          You are the host
-                        </span>
-                      )}
                       <button
                         type="button"
                         onClick={() => navigate(`/events/${event._id}`)}
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800"
+                        className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
                       >
                         View details
                       </button>
@@ -346,19 +358,36 @@ const Events = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-600">Category</label>
-                  <input
-                    type="text"
+                  <select
                     required
                     value={formValues.category}
-                    onChange={(e) => setFormValues((prev) => ({ ...prev, category: e.target.value }))}
+                    onChange={(e) => {
+                      setFormValues((prev) => ({ 
+                        ...prev, 
+                        category: e.target.value
+                      }));
+                    }}
                     className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                  />
+                  >
+                    <option value="">Select a category</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Education">Education</option>
+                    <option value="Concert">Concert</option>
+                    <option value="Workshop">Workshop</option>
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Business">Business</option>
+                    <option value="Art & Culture">Art & Culture</option>
+                    <option value="Health & Wellness">Health & Wellness</option>
+                    <option value="Others">Others</option>
+                  </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-600">Date & time</label>
                   <input
                     type="datetime-local"
                     required
+                    min={new Date().toISOString().slice(0, 16)}
                     value={formValues.date}
                     onChange={(e) => setFormValues((prev) => ({ ...prev, date: e.target.value }))}
                     className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
@@ -407,10 +436,10 @@ const Events = () => {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-600">Description</label>
+                <label className="text-xs font-semibold text-slate-600">Description <span className="text-gray-400">(optional)</span></label>
                 <textarea
-                  required
                   rows="4"
+                  placeholder="Describe your event..."
                   value={formValues.description}
                   onChange={(e) => setFormValues((prev) => ({ ...prev, description: e.target.value }))}
                   className="w-full rounded-2xl border border-gray-200 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"

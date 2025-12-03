@@ -25,7 +25,7 @@ const Filter = () => {
   };
 
   return (
-    <div className='py-12 px-4'>
+    <div className='py-0 px-4'>
       <div className='max-w-6xl mx-auto'>
         {/* Header */}
         <div className='text-center mb-12'>

@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import sampleEventImg from "../../assets/event.jpg";
-import { fetchEvents } from "../../services/eventService";
+import { fetchEvents, fetchMyEvents } from "../../services/eventService";
+import { AuthContext } from "../../store/useAuthStore";
 
 const getCategoryColor = (category) => {
   const colors = {
@@ -37,19 +39,30 @@ const EventGrid = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useContext(AuthContext);
 
   useEffect(() => {
     let isMounted = true;
     const loadEvents = async () => {
       try {
         setLoading(true);
-        const data = await fetchEvents();
+        const [allEvents, myEvents] = await Promise.all([
+          fetchEvents(),
+          isAuthenticated ? fetchMyEvents() : Promise.resolve([])
+        ]);
+        
         if (isMounted) {
-          setEvents(data.slice(0, 6));
+          const currentDate = new Date();
+          
+          // Filter out past events but show all events including user's own
+          const futureEvents = allEvents.filter(event => new Date(event.date) >= currentDate);
+          setEvents(futureEvents.slice(0, 6));
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.response?.data?.message || "Unable to load events");
+          const errorMsg = err.response?.data?.message || "Unable to load events";
+          setError(errorMsg);
+          toast.error(errorMsg);
         }
       } finally {
         if (isMounted) {
@@ -166,7 +179,7 @@ const EventGrid = () => {
                     </button>
                     <button
                       type="button"
-                      className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 hover:text-indigo-600"
+                      className="px-4 py-2 rounded-xl border border-indigo-200 text-sm font-semibold text-indigo-600 hover:bg-indigo-50"
                       onClick={() => navigate(`/events/${event._id}`)}
                       aria-label="View event details"
                     >

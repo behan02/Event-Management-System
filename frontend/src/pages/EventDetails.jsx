@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import sampleEventImg from "../assets/event.jpg";
 import { fetchEventById } from "../services/eventService";
 import { bookEvent } from "../services/bookingService";
+import { AuthContext } from "../store/useAuthStore";
 
 const formatDateTime = (value) => {
   const date = new Date(value);
@@ -19,6 +21,7 @@ const formatDateTime = (value) => {
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,11 +61,22 @@ const EventDetails = () => {
     return Math.max((event.maxParticipants || 0) - (event.bookedCount || 0), 0);
   }, [event]);
 
-  const bookingDisabled = !event || availableSeats === 0;
+  const isEventCreator = useMemo(() => {
+    if (!event || !user) return false;
+    return event.createdBy === user._id;
+  }, [event, user]);
+
+  const bookingDisabled = !event || availableSeats === 0 || isEventCreator;
 
   const handleBooking = async (e) => {
     e.preventDefault();
     if (bookingDisabled) return;
+    
+    if (isEventCreator) {
+      toast.error("You cannot book tickets for your own event.");
+      return;
+    }
+    
     setBookingLoading(true);
     setBookingState({ status: null, message: null });
     try {
@@ -71,12 +85,20 @@ const EventDetails = () => {
           ? `FREE-${Date.now()}`
           : `PAY-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
       await bookEvent(event._id, { quantity, paymentId: reference });
-      setBookingState({ status: "success", message: "Booking confirmed! Check your profile for details." });
+      
+      // Refresh event data to update booked count
+      const updatedEvent = await fetchEventById(eventId);
+      setEvent(updatedEvent);
+      
+      toast.success("Booking confirmed! Check your profile for details.");
+      setQuantity(1); // Reset quantity
     } catch (err) {
+      const errorMsg = err.response?.data?.message || "Unable to complete booking";
       setBookingState({
         status: "error",
-        message: err.response?.data?.message || "Unable to complete booking",
+        message: errorMsg,
       });
+      toast.error(errorMsg);
     } finally {
       setBookingLoading(false);
     }
@@ -109,7 +131,7 @@ const EventDetails = () => {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="text-sm text-indigo-600 font-semibold hover:underline"
+        className="text-sm text-slate-900 font-semibold hover:underline"
       >
         ← Back
       </button>
@@ -195,13 +217,16 @@ const EventDetails = () => {
                 Total price: <span className="font-semibold text-slate-900">Rs. {(event.price * quantity).toLocaleString()}</span>
               </p>
             )}
-            {bookingState.message && (
-              <div
-                className={`rounded-xl px-4 py-2 text-sm ${
-                  bookingState.status === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
-                }`}
-              >
+            {bookingState.status === "error" && bookingState.message && (
+              <div className="rounded-xl px-4 py-2 text-sm bg-red-50 text-red-700">
                 {bookingState.message}
+              </div>
+            )}
+            {isEventCreator && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">You are the host of this event.</span> You cannot book tickets for your own event.
+                </p>
               </div>
             )}
             <button
@@ -209,7 +234,7 @@ const EventDetails = () => {
               disabled={bookingLoading || bookingDisabled}
               className="w-full md:w-auto px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
             >
-              {bookingDisabled ? "Event full" : bookingLoading ? "Booking..." : event.price === 0 ? "Book for free" : "Proceed to booking"}
+              {isEventCreator ? "You are the host" : availableSeats === 0 ? "Event full" : bookingLoading ? "Booking..." : event.price === 0 ? "Book for free" : "Proceed to booking"}
             </button>
           </form>
         </div>

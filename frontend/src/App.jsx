@@ -2,6 +2,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import EventDetails from './pages/EventDetails';
+import Bookings from './pages/Bookings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -13,7 +14,7 @@ const App = () => {
   const hideNavBar = ['/login', '/signup'].includes(location.pathname);
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-100">
       {!hideNavBar && <Navbar />}
       <Routes>
         <Route
@@ -37,6 +38,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <EventDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings"
+          element={
+            <ProtectedRoute>
+              <Bookings />
             </ProtectedRoute>
           }
         />
