@@ -5,7 +5,7 @@ const HeroSection = () => {
   const navigate = useNavigate();
   return (
     <div className="h-screen">
-        <div className="container mx-auto px-20 h-full flex flex-col lg:flex-row gap-8 items-center justify-center">
+        <div className="mx-auto px-20 h-full flex flex-col lg:flex-row gap-8 items-center justify-center">
             <div className="flex-1 text-center lg:text-left">
                 <h1 className="text-4xl lg:text-5xl text-gray-800 mb-5 font-bold">
                     Eventix Event Management System

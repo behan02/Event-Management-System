@@ -277,7 +277,19 @@ const Events = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-blue-50 to-white"></div>
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative mx-auto px-20 py-10 space-y-10">
       <header className="space-y-3">
         {/* <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Events</p> */}
         <h1 className="text-3xl font-bold text-slate-900">Plan, publish & discover</h1>
@@ -562,7 +574,7 @@ const Events = () => {
 
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 relative my-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 relative my-8 max-h-[90vh] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-xl font-semibold text-slate-900">
@@ -710,6 +722,7 @@ const Events = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

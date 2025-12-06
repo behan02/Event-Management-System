@@ -79,7 +79,7 @@ const EventGrid = () => {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
+    <div className="mx-auto px-20 py-12">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">Upcoming events</h2>

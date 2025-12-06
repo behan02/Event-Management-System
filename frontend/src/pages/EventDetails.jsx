@@ -113,20 +113,44 @@ const EventDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500">Loading event details…</div>
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-100 via-blue-50 to-white"></div>
+        
+        {/* Decorative Elements */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+          <div className="absolute top-40 right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+        </div>
+        
+        <div className="relative text-slate-500">Loading event details…</div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
-        <p className="text-xl text-red-600 mb-4">{error}</p>
-        <button
-          onClick={() => navigate("/events")}
-          className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50"
-        >
-          Back to events
-        </button>
+      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 relative overflow-hidden">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-100 via-blue-50 to-white"></div>
+        
+        {/* Decorative Elements */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+          <div className="absolute top-40 right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+        </div>
+        
+        <div className="relative">
+          <p className="text-xl text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => navigate("/events")}
+            className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50"
+          >
+            Back to events
+          </button>
+        </div>
       </div>
     );
   }
@@ -134,7 +158,19 @@ const EventDetails = () => {
   if (!event) return null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-blue-50 to-white"></div>
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative mx-auto px-50 py-10 space-y-8">
       <button
         type="button"
         onClick={() => navigate(-1)}
@@ -244,6 +280,7 @@ const EventDetails = () => {
               {isEventCreator ? "You are the host" : availableSeats === 0 ? "Event full" : bookingLoading ? "Processing..." : event.price === 0 ? "Book for free" : "Proceed to payment"}
             </button>
           </form>
+        </div>
         </div>
       </div>
     </div>

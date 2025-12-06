@@ -86,7 +86,19 @@ const Profile = () => {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-blue-50 to-white"></div>
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative mx-auto px-20 py-10 space-y-8">
       <section className="bg-white border border-gray-100 rounded-3xl shadow-sm p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
         {userLoading ? (
           <div className="flex items-center gap-4 w-full">
@@ -300,6 +312,7 @@ const Profile = () => {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };
