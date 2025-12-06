@@ -8,7 +8,8 @@ const eventSchema = mongoose.Schema(
         },
         description: {
             type: String,
-            required: true
+            required: false,
+            default: "No description provided"
         },
         date: {
             type: Date,
@@ -34,6 +35,15 @@ const eventSchema = mongoose.Schema(
         bookedCount: {
             type: Number,
             default: 0
+        },
+        maxParticipants: {
+            type: Number,
+            required: true,
+            min: [1, "Maximum participants must be at least 1"]
+        },
+        category: {
+            type: String,
+            required: true
         }
     },
     { timestamps: true }

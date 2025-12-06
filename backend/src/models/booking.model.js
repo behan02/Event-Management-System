@@ -38,6 +38,9 @@ const bookingSchema = mongoose.Schema(
     { timestamps: true }
 )
 
+// Create a compound unique index to prevent duplicate bookings
+bookingSchema.index({ eventId: 1, userId: 1 }, { unique: true });
+
 const Booking = mongoose.model("Booking", bookingSchema);
 
 export default Booking;

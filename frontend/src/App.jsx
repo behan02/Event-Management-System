@@ -1,35 +1,76 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Route, Routes, useLocation } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
+import Bookings from './pages/Bookings';
+import Profile from './pages/Profile';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import PaymentSuccess from './pages/PaymentSuccess';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './lib/ProtectedRoute';
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const location = useLocation();
+  const hideNavBar = ['/login', '/signup'].includes(location.pathname);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="min-h-screen bg-gray-100">
+      {!hideNavBar && <Navbar />}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute>
+              <Events />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:eventId"
+          element={
+            <ProtectedRoute>
+              <EventDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings"
+          element={
+            <ProtectedRoute>
+              <Bookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
+    </div>
+  );
+};
 
-export default App
+export default App;
