@@ -6,6 +6,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.route.js";
 import eventRoutes from "./routes/event.route.js";
 import bookingRoutes from "./routes/booking.route.js";
+import paymentRoutes from "./routes/payment.route.js";
 import { connectDB } from "./lib/db.js";
 
 import "./models/event.model.js";
@@ -21,12 +22,20 @@ app.use(cors({
     origin: "http://localhost:5173",
     credentials: true
 }));
+
+// Webhook route needs raw body - placed before express.json() and handled separately
+app.post("/api/payment/webhook", express.raw({ type: 'application/json' }), async (req, res, next) => {
+    const { handleWebhook } = await import("./controllers/payment.controller.js");
+    handleWebhook(req, res, next);
+});
+
 app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

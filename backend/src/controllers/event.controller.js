@@ -1,3 +1,4 @@
+import cloudinary from "../lib/cloudinary.js";
 import Event from "../models/event.model.js"
 import mongoose from "mongoose"
 
@@ -36,7 +37,7 @@ export const getEvent = async (req, res) => {
 
 export const createEvent = async (req, res) => {
     try {
-        const { title, description, date, location, maxParticipants } = req.body;
+        const { title, description, date, location, image, imageUrl, maxParticipants } = req.body;
         if (!title || !description || !date || !location || !maxParticipants) {
             return res.status(400).json({ message: "Missing required fields: title, description, date, location, and maxParticipants" });
         }
@@ -50,9 +51,23 @@ export const createEvent = async (req, res) => {
             return res.status(400).json({ message: "Event date cannot be in the past" });
         }
 
+        let finalImageUrl = imageUrl; // Use provided imageUrl as fallback
+        
+        // If image data is provided (base64), upload to Cloudinary
+        if (image) {
+            try {
+                const uploadResponse = await cloudinary.uploader.upload(image);
+                finalImageUrl = uploadResponse.secure_url;
+            } catch (uploadError) {
+                console.error("Error uploading image:", uploadError);
+                return res.status(400).json({ message: "Error uploading image" });
+            }
+        }
+
         // Create event with authenticated user as creator
         const newEvent = new Event({
             ...req.body,
+            imageUrl: finalImageUrl, // Use the processed image URL
             createdBy: req.user._id
         });
         
@@ -122,7 +137,18 @@ export const updateEvent = async (req, res) => {
             }
         }
 
-        const { createdBy, ...allowedUpdates } = updatedData;
+        const { createdBy, image, ...allowedUpdates } = updatedData;
+
+        // Handle image upload if provided
+        if (image) {
+            try {
+                const uploadResponse = await cloudinary.uploader.upload(image);
+                allowedUpdates.imageUrl = uploadResponse.secure_url;
+            } catch (uploadError) {
+                console.error("Error uploading image:", uploadError);
+                return res.status(400).json({ message: "Error uploading image" });
+            }
+        }
 
         const updatedEvent = await Event.findByIdAndUpdate(id, { $set: allowedUpdates }, { new: true });
 

@@ -177,11 +177,20 @@ const Profile = () => {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
                       <div>
                         <p className="text-xs uppercase text-slate-500 mb-1">Total paid</p>
                         <p className="text-lg font-semibold text-slate-900">
-                          Rs. {booking.totalPrice?.toLocaleString() || "0"}
+                          {booking.totalPrice === 0 ? "Free" : `Rs. ${booking.totalPrice?.toLocaleString() || "0"}`}
+                        </p>
+                        <p className={`text-xs font-semibold mt-1 ${
+                          booking.paymentStatus === 'success' ? 'text-green-600' : 
+                          booking.paymentStatus === 'pending' ? 'text-yellow-600' : 
+                          'text-red-600'
+                        }`}>
+                          {booking.paymentStatus === 'success' ? '✓ Paid' : 
+                           booking.paymentStatus === 'pending' ? '⏱ Pending' : 
+                           '✗ Failed'}
                         </p>
                       </div>
                       {isPast ? (

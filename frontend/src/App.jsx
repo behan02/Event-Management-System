@@ -6,6 +6,7 @@ import Bookings from './pages/Bookings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import PaymentSuccess from './pages/PaymentSuccess';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './lib/ProtectedRoute';
 
@@ -54,6 +55,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/success"
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
             </ProtectedRoute>
           }
         />

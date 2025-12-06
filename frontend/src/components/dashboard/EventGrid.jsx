@@ -54,9 +54,11 @@ const EventGrid = () => {
         if (isMounted) {
           const currentDate = new Date();
           
-          // Filter out past events but show all events including user's own
-          const futureEvents = allEvents.filter(event => new Date(event.date) >= currentDate);
-          setEvents(futureEvents.slice(0, 6));
+          // Filter out past events and sort by nearest date
+          const futureEvents = allEvents
+            .filter(event => new Date(event.date) >= currentDate)
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          setEvents(futureEvents.slice(0, 9));
         }
       } catch (err) {
         if (isMounted) {
@@ -88,7 +90,7 @@ const EventGrid = () => {
           onClick={() => navigate("/events")}
           className="px-4 py-2 rounded-xl text-sm font-semibold border border-indigo-200 text-indigo-600 hover:bg-indigo-50"
         >
-          Manage events
+          Browse all events
         </button>
       </div>
 

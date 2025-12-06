@@ -18,7 +18,6 @@ const defaultFormState = {
   category: "",
   price: 0,
   maxParticipants: 10,
-  imageUrl: "",
 };
 
 const formatDate = (value) => {
@@ -43,6 +42,7 @@ const formatForInput = (value) => {
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [myEvents, setMyEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,8 +50,86 @@ const Events = () => {
   const [isFormOpen, setFormOpen] = useState(false);
   const [formValues, setFormValues] = useState(defaultFormState);
   const [editingId, setEditingId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    location: '',
+    category: '',
+    date: '',
+    priceRange: ''
+  });
 
   const navigate = useNavigate();
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      location: '',
+      category: '',
+      date: '',
+      priceRange: ''
+    });
+  };
+
+  const applyFilters = useCallback((eventsList) => {
+    let filtered = [...eventsList];
+
+    // Filter by location
+    if (filters.location) {
+      filtered = filtered.filter(event => 
+        event.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (filters.category) {
+      filtered = filtered.filter(event => 
+        event.category === filters.category
+      );
+    }
+
+    // Filter by date
+    if (filters.date) {
+      const filterDate = new Date(filters.date);
+      filtered = filtered.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate.toDateString() === filterDate.toDateString();
+      });
+    }
+
+    // Filter by price range
+    if (filters.priceRange) {
+      filtered = filtered.filter(event => {
+        const price = event.price || 0;
+        switch (filters.priceRange) {
+          case 'free':
+            return price === 0;
+          case '0-2500':
+            return price >= 0 && price <= 2500;
+          case '2501-5000':
+            return price >= 2501 && price <= 5000;
+          case '5001-10000':
+            return price >= 5001 && price <= 10000;
+          case '10001-20000':
+            return price >= 10001 && price <= 20000;
+          case '20001+':
+            return price >= 20001;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  }, [filters]);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -69,6 +147,7 @@ const Events = () => {
       
       setEvents(futureEvents);
       setMyEvents(futureMyEvents);
+      setFilteredEvents(futureEvents);
     } catch (err) {
       const errorMsg = err.response?.data?.message || "Failed to load events";
       setError(errorMsg);
@@ -77,6 +156,12 @@ const Events = () => {
       setLoading(false);
     }
   }, []);
+
+  // Apply filters whenever events or filters change
+  useEffect(() => {
+    const filtered = applyFilters(events);
+    setFilteredEvents(filtered);
+  }, [events, applyFilters]);
 
   useEffect(() => {
     loadEvents();
@@ -94,6 +179,8 @@ const Events = () => {
       date: formatForInput(event.date),
     });
     setEditingId(event._id);
+    setSelectedImage(null);
+    setImagePreview(event.imageUrl || null);
     setFormOpen(true);
   };
 
@@ -101,6 +188,29 @@ const Events = () => {
     setFormOpen(false);
     setEditingId(null);
     setFormValues(defaultFormState);
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const handleDelete = async (eventId) => {
@@ -133,6 +243,19 @@ const Events = () => {
       date: formValues.date ? new Date(formValues.date).toISOString() : new Date().toISOString(),
       description: formValues.description || 'No description provided',
     };
+
+    // Handle image upload
+    if (selectedImage) {
+      try {
+        const base64Image = await convertToBase64(selectedImage);
+        payload.image = base64Image;
+      } catch (error) {
+        console.error('Error converting image:', error);
+        toast.error('Failed to process image');
+        setActionLoading(false);
+        return;
+      }
+    }
 
     try {
       if (editingId) {
@@ -245,7 +368,7 @@ const Events = () => {
         )}
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-6">
         <div>
           <h2 className="text-2xl font-semibold text-slate-900">Discover events</h2>
           <p className="text-sm text-slate-500">
@@ -253,17 +376,128 @@ const Events = () => {
           </p>
         </div>
 
+        {/* Filter Section */}
+        <div className='bg-white rounded-3xl shadow-lg p-8 border border-gray-100'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+            
+            {/* Location Filter */}
+            <div className='space-y-2'>
+              <label className='flex items-center text-sm font-semibold text-gray-700 mb-2'>
+                <svg className='w-4 h-4 mr-2 text-indigo-600' fill='currentColor' viewBox='0 0 20 20'>
+                  <path fillRule='evenodd' d='M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z' />
+                </svg>
+                Location
+              </label>
+              <select 
+                className='w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 bg-gray-50 hover:bg-white'
+                value={filters.location}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+              >
+                <option value="">All Locations</option>
+                <option value="Colombo">Colombo</option>
+                <option value="Kandy">Kandy</option>
+                <option value="Galle">Galle</option>
+                <option value="Jaffna">Jaffna</option>
+                <option value="Negombo">Negombo</option>
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div className='space-y-2'>
+              <label className='flex items-center text-sm font-semibold text-gray-700 mb-2'>
+                <svg className='w-4 h-4 mr-2 text-purple-600' fill='currentColor' viewBox='0 0 20 20'>
+                  <path d='M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z' />
+                </svg>
+                Category
+              </label>
+              <select 
+                className='w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 bg-gray-50 hover:bg-white'
+                value={filters.category}
+                onChange={(e) => handleFilterChange('category', e.target.value)}
+              >
+                <option value="">All Categories</option>
+                <option value="Sports">🏀 Sports</option>
+                <option value="Education">📚 Education</option>
+                <option value="Concert">🎵 Concert</option>
+                <option value="Technology">💻 Technology</option>
+                <option value="Workshop">🔧 Workshop</option>
+                <option value="Food & Dining">🍽️ Food & Dining</option>
+                <option value="Business">💼 Business</option>
+                <option value="Art & Culture">🎨 Art & Culture</option>
+                <option value="Health & Wellness">🧘 Health & Wellness</option>
+                <option value="Others">📋 Others</option>
+              </select>
+            </div>
+
+            {/* Date Filter */}
+            <div className='space-y-2'>
+              <label className='flex items-center text-sm font-semibold text-gray-700 mb-2'>
+                <svg className='w-4 h-4 mr-2 text-pink-600' fill='currentColor' viewBox='0 0 20 20'>
+                  <path fillRule='evenodd' d='M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z' />
+                </svg>
+                Date
+              </label>
+              <input 
+                type="date" 
+                className='w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all duration-200 bg-gray-50 hover:bg-white'
+                value={filters.date}
+                onChange={(e) => handleFilterChange('date', e.target.value)}
+              />
+            </div>
+
+            {/* Price Range Filter */}
+            <div className='space-y-2'>
+              <label className='flex items-center text-sm font-semibold text-gray-700 mb-2'>
+                <svg className='w-4 h-4 mr-2 text-green-600' fill='currentColor' viewBox='0 0 20 20'>
+                  <path d='M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z' />
+                  <path fillRule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z' />
+                </svg>
+                Price Range
+              </label>
+              <select 
+                className='w-full border-2 border-gray-200 rounded-xl py-3 px-4 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 bg-gray-50 hover:bg-white'
+                value={filters.priceRange}
+                onChange={(e) => handleFilterChange('priceRange', e.target.value)}
+              >
+                <option value="">Any Price</option>
+                <option value="free">Free Events</option>
+                <option value="0-2500">Rs. 0 - 2,500</option>
+                <option value="2501-5000">Rs. 2,501 - 5,000</option>
+                <option value="5001-10000">Rs. 5,001 - 10,000</option>
+                <option value="10001-20000">Rs. 10,001 - 20,000</option>
+                <option value="20001+">Rs. 20,001+</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className='flex flex-col sm:flex-row gap-4 justify-center items-center mt-8 pt-6 border-t border-gray-200'>
+            <button 
+              onClick={clearAllFilters}
+              className='border-2 border-gray-300 hover:border-red-400 text-gray-700 hover:text-red-600 font-semibold py-3 px-8 rounded-xl hover:bg-red-50 transition-all duration-200 flex items-center'
+            >
+              <svg className='w-5 h-5 mr-2' fill='currentColor' viewBox='0 0 20 20'>
+                <path fillRule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' />
+              </svg>
+              Clear All Filters
+            </button>
+            <div className='text-sm text-gray-600'>
+              Showing {filteredEvents.length} of {events.length} events
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="text-center text-slate-500 py-10">Loading events…</div>
         ) : error ? (
           <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl">{error}</div>
-        ) : events.length === 0 ? (
+        ) : filteredEvents.length === 0 ? (
           <div className="bg-white border border-dashed border-gray-300 rounded-2xl p-10 text-center text-slate-500">
-            No events are published yet.
+            {events.length === 0 ? "No events are published yet." : "No events match your current filters."}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <article
                 key={event._id}
                 className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden flex flex-col"
@@ -327,8 +561,8 @@ const Events = () => {
       </section>
 
       {isFormOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 relative">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 relative my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-xl font-semibold text-slate-900">
@@ -426,14 +660,25 @@ const Events = () => {
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-600">Image URL</label>
+                <label className="text-xs font-semibold text-slate-600">Event Image</label>
                 <input
-                  type="url"
-                  placeholder="https://"
-                  value={formValues.imageUrl}
-                  onChange={(e) => setFormValues((prev) => ({ ...prev, imageUrl: e.target.value }))}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                 />
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-xl border border-gray-200"
+                    />
+                  </div>
+                )}
+                <div className="text-xs text-gray-500 mt-1">
+                  Upload an image for your event (JPEG, PNG, etc.)
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-600">Description <span className="text-gray-400">(optional)</span></label>

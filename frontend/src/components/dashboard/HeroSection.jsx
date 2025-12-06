@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import heroImg from "../../assets/event.jpg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <div className="h-screen">
         <div className="container mx-auto px-20 h-full flex flex-col lg:flex-row gap-8 items-center justify-center">
@@ -14,7 +16,12 @@ const HeroSection = () => {
                     attend one, our platform helps you find, organize, and enjoy every moment.
                 </p>
                 {/* <button className="rounded-[30px] bg-indigo-600 border-2 border-transparent text-white text-[16px] py-3 px-15 mt-5 mr-2 hover:bg-indigo-700">Buy Tickets</button> */}
-                <button className="rounded-[30px] border-2 border-indigo-600 text-indigo-600 text-[16px] py-3 px-15 mt-5 hover:bg-indigo-600 hover:text-white">Browse Events</button>
+                <button 
+                    onClick={() => navigate('/events')}
+                    className="rounded-[30px] border-2 border-indigo-600 text-indigo-600 text-[16px] py-3 px-15 mt-5 hover:bg-indigo-600 hover:text-white"
+                >
+                    Browse Events
+                </button>
             </div>
             <div className="flex-1 flex justify-end">
                 <img 

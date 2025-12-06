@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import sampleEventImg from "../assets/event.jpg";
 import { fetchEventById } from "../services/eventService";
 import { bookEvent } from "../services/bookingService";
+import { createCheckoutSession } from "../services/paymentService";
 import { AuthContext } from "../store/useAuthStore";
 
 const formatDateTime = (value) => {
@@ -79,19 +80,26 @@ const EventDetails = () => {
     
     setBookingLoading(true);
     setBookingState({ status: null, message: null });
+    
     try {
-      const reference =
-        event.price === 0
-          ? `FREE-${Date.now()}`
-          : `PAY-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
-      await bookEvent(event._id, { quantity, paymentId: reference });
-      
-      // Refresh event data to update booked count
-      const updatedEvent = await fetchEventById(eventId);
-      setEvent(updatedEvent);
-      
-      toast.success("Booking confirmed! Check your profile for details.");
-      setQuantity(1); // Reset quantity
+      // For paid events, redirect to Stripe checkout
+      if (event.price > 0) {
+        const { url } = await createCheckoutSession(event._id, quantity);
+        // Redirect to Stripe checkout page
+        window.location.href = url;
+      } else {
+        // For free events, book directly
+        const reference = `FREE-${Date.now()}`;
+        await bookEvent(event._id, { quantity, paymentId: reference });
+        
+        // Refresh event data to update booked count
+        const updatedEvent = await fetchEventById(eventId);
+        setEvent(updatedEvent);
+        
+        toast.success("Booking confirmed! Check your profile for details.");
+        setQuantity(1); // Reset quantity
+        setBookingLoading(false);
+      }
     } catch (err) {
       const errorMsg = err.response?.data?.message || "Unable to complete booking";
       setBookingState({
@@ -99,7 +107,6 @@ const EventDetails = () => {
         message: errorMsg,
       });
       toast.error(errorMsg);
-    } finally {
       setBookingLoading(false);
     }
   };
@@ -234,7 +241,7 @@ const EventDetails = () => {
               disabled={bookingLoading || bookingDisabled}
               className="w-full md:w-auto px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
             >
-              {isEventCreator ? "You are the host" : availableSeats === 0 ? "Event full" : bookingLoading ? "Booking..." : event.price === 0 ? "Book for free" : "Proceed to booking"}
+              {isEventCreator ? "You are the host" : availableSeats === 0 ? "Event full" : bookingLoading ? "Processing..." : event.price === 0 ? "Book for free" : "Proceed to payment"}
             </button>
           </form>
         </div>
