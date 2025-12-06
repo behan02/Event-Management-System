@@ -31,66 +31,98 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-2xl p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-900">Welcome back</h1>
-          <p className="text-slate-500 mt-2">Sign in to manage your events.</p>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-100 via-blue-50 to-white"></div>
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      {/* Login Card */}
+      <div className="relative w-full max-w-md">
+        <div className="bg-white bg-opacity-70 backdrop-blur-lg rounded-3xl shadow-2xl shadow-blue-100/50 p-8 space-y-6 border border-white border-opacity-50">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome back</h1>
+            <p className="text-gray-600 text-sm">Sign in to manage your events</p>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100">
+              {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full bg-white rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                placeholder="jane@eventix.com"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full bg-white rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white py-3.5 rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white bg-opacity-70 text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* Sign Up Link */}
+          <p className="text-center text-sm text-gray-600">
+            Don&apos;t have an account?{' '}
+            <button
+              type="button"
+              className="text-blue-600 font-semibold hover:text-blue-700 hover:underline transition-colors"
+              onClick={() => navigate('/signup')}
+            >
+              Create one
+            </button>
+          </p>
         </div>
-        {error && (
-          <div className="bg-red-50 text-red-700 px-4 py-2 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-1">
-            <label htmlFor="email" className="text-sm font-medium text-slate-700">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              placeholder="jane@eventix.com"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-indigo-600 text-white py-2 font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
-        <p className="text-center text-sm text-slate-500">
-          Don&apos;t have an account?{' '}
-          <button
-            type="button"
-            className="text-indigo-600 font-semibold hover:underline"
-            onClick={() => navigate('/signup')}
-          >
-            Create one
-          </button>
-        </p>
       </div>
     </div>
   );
