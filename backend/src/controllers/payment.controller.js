@@ -102,12 +102,29 @@ export const verifyPayment = async (req, res) => {
         // Extract metadata
         const { eventId, userId, quantity } = session.metadata;
 
-        // Check if booking already exists for this session
-        const existingBooking = await Booking.findOne({ paymentId: sessionId });
-        if (existingBooking) {
+        // Check if booking already exists for this session (by payment ID)
+        const existingBookingByPayment = await Booking.findOne({ paymentId: sessionId });
+        if (existingBookingByPayment) {
+            await existingBookingByPayment.populate('eventId', 'title date location price imageUrl');
+            await existingBookingByPayment.populate('userId', 'name email');
             return res.status(200).json({
                 message: "Booking already processed",
-                booking: existingBooking,
+                booking: existingBookingByPayment,
+                alreadyProcessed: true
+            });
+        }
+
+        // Check if booking already exists for this user and event
+        const existingBookingByUser = await Booking.findOne({
+            eventId: eventId,
+            userId: userId
+        });
+        if (existingBookingByUser) {
+            await existingBookingByUser.populate('eventId', 'title date location price imageUrl');
+            await existingBookingByUser.populate('userId', 'name email');
+            return res.status(200).json({
+                message: "Booking already exists for this event",
+                booking: existingBookingByUser,
                 alreadyProcessed: true
             });
         }
@@ -128,6 +145,16 @@ export const verifyPayment = async (req, res) => {
             let newBooking;
             
             await mongoSession.withTransaction(async () => {
+                // Double-check for existing booking within transaction
+                const duplicateCheck = await Booking.findOne({
+                    eventId,
+                    userId
+                }).session(mongoSession);
+
+                if (duplicateCheck) {
+                    throw new Error("DUPLICATE_BOOKING");
+                }
+
                 newBooking = new Booking({
                     eventId,
                     userId,
@@ -155,6 +182,20 @@ export const verifyPayment = async (req, res) => {
                 message: "Payment verified and booking created successfully",
                 booking: newBooking
             });
+        } catch (transactionError) {
+            if (transactionError.message === "DUPLICATE_BOOKING") {
+                // If duplicate booking detected in transaction, fetch and return existing
+                const existingBooking = await Booking.findOne({ eventId, userId })
+                    .populate('eventId', 'title date location price imageUrl')
+                    .populate('userId', 'name email');
+                
+                return res.status(200).json({
+                    message: "Booking already exists",
+                    booking: existingBooking,
+                    alreadyProcessed: true
+                });
+            }
+            throw transactionError;
         } finally {
             await mongoSession.endSession();
         }

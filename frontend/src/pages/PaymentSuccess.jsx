@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { verifyPayment } from "../services/paymentService";
@@ -8,6 +8,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState("verifying");
   const [booking, setBooking] = useState(null);
+  const verificationAttempted = useRef(false);
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -17,6 +18,12 @@ const PaymentSuccess = () => {
       navigate("/events");
       return;
     }
+
+    // Prevent duplicate verification attempts
+    if (verificationAttempted.current) {
+      return;
+    }
+    verificationAttempted.current = true;
 
     const verify = async () => {
       try {
