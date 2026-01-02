@@ -19,7 +19,7 @@ const app = express();
 const PORT = process.env.PORT;
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "https://main.d1blm9ncda9np.amplifyapp.com",
     credentials: true
 }));
 
